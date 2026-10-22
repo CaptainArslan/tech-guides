@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deploy Laravel on a VPS // AWS &amp; DigitalOcean guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #0a0908;
+    --panel: #14120d;
+    --panel-2: #1c1912;
+    --line: #332c1f;
+    --amber: #ffb000;
+    --amber-dim: #c98a2c;
+    --amber-soft: #7a5a1f;
+    --text: #e8dfc8;
+    --text-dim: #a89a78;
+    --green: #7ec97a;
+    --red: #d9704f;
+    color-scheme: dark;
+  }
+
+  :root[data-theme="light"]{
+    --bg: #f6f2e8;
+    --panel: #ffffff;
+    --panel-2: #efe8d6;
+    --line: #ddd2b0;
+    --amber: #a86a00;
+    --amber-dim: #8a5a12;
+    --amber-soft: #c9a15a;
+    --text: #241f14;
+    --text-dim: #6b6048;
+    --green: #3f7a3a;
+    --red: #b24d2c;
+    color-scheme: light;
+  }
+
+  :root[data-theme="light"] body::before{ display: none; }
+  :root[data-theme="light"] .term-body{ color: #2f7a3a; }
+  :root[data-theme="light"] .term{ box-shadow: 0 0 0 1px rgba(168,106,0,0.06), 0 20px 50px -25px rgba(0,0,0,0.15); }
+  :root[data-theme="light"] .hero{
+    background: radial-gradient(ellipse 900px 400px at 50% -10%, rgba(168,106,0,0.06), transparent 70%);
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  ::selection{ background: var(--amber); color: #0a0908; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    transition: background-color .2s ease, color .2s ease;
+  }
+
+  .theme-toggle{
+    position: fixed;
+    top: 18px;
+    right: 22px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 14px 6px 6px;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+  }
+  .theme-toggle:hover{ color: var(--text); border-color: var(--amber-soft); }
+  .theme-toggle .icon{
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--panel-2);
+    font-size: 12px;
+  }
+  @media (max-width: 600px){
+    .theme-toggle{ top: 10px; right: 10px; padding: 5px 10px 5px 5px; }
+    .theme-toggle .label{ display:none; }
+  }
+
+  body::before{
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(255,176,0,0.015) 0px,
+      rgba(255,176,0,0.015) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    z-index: 999;
+    mix-blend-mode: overlay;
+  }
+
+  h1,h2,h3{
+    font-family: 'Space Grotesk', sans-serif;
+    color: var(--text);
+    margin: 0;
+  }
+
+  a{ color: var(--amber); }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding: 64px 32px 40px;
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(ellipse 900px 400px at 50% -10%, rgba(255,176,0,0.08), transparent 70%);
+  }
+  .hero-inner{ max-width: 920px; margin: 0 auto; }
+  .eyebrow{
+    color: var(--amber-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-size: 11px;
+    margin-bottom: 14px;
+  }
+  .hero h1{
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .hero p.sub{
+    color: var(--text-dim);
+    font-size: 14px;
+    margin: 8px 0 28px;
+    max-width: 620px;
+  }
+  .stack-pills{
+    display:flex; flex-wrap:wrap; gap:8px;
+    margin: 0 0 24px;
+  }
+  .pill{
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text-dim);
+    font-size: 11px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+
+  .term{
+    background: #060504;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px rgba(255,176,0,0.03), 0 20px 60px -20px rgba(0,0,0,0.6);
+    overflow: hidden;
+  }
+  .term-bar{
+    display:flex; align-items:center; gap:8px;
+    padding: 9px 14px;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--line);
+  }
+  .dot{ width:9px; height:9px; border-radius:50%; }
+  .dot.r{ background:#5a3020; }
+  .dot.y{ background:#5a4a20; }
+  .dot.g{ background:#2f4a2a; }
+  .term-title{ margin-left:8px; color: var(--text-dim); font-size:11px; }
+  .term-body{
+    padding: 20px 22px 26px;
+    font-size: 13px;
+    min-height: 168px;
+    color: var(--green);
+    white-space: pre-wrap;
+  }
+  .term-body .p{ color: var(--amber-dim); }
+  .term-body .arrow{ color: var(--text-dim); }
+  .cursor{
+    display:inline-block; width:7px; height:14px; background: var(--amber);
+    vertical-align:-2px; animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  /* ---------- LAYOUT ---------- */
+  .layout{
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 40px;
+    padding: 40px 32px 100px;
+  }
+
+  nav.toc{
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+  nav.toc .group-label{
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 20px 0 8px;
+  }
+  nav.toc .group-label:first-child{ margin-top: 0; }
+  nav.toc a{
+    display:flex; gap:8px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 12.5px;
+    padding: 5px 0;
+    border-left: 2px solid transparent;
+    padding-left: 10px;
+    margin-left: -12px;
+    transition: color .15s, border-color .15s;
+  }
+  nav.toc a .n{ color: var(--amber-soft); flex-shrink:0; }
+  nav.toc a:hover{ color: var(--text); }
+  nav.toc a.active{ color: var(--amber); border-left-color: var(--amber); }
+
+  main{ min-width: 0; }
+
+  section.card{
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 8px;
+    margin-bottom: 22px;
+    scroll-margin-top: 24px;
+    overflow: hidden;
+  }
+  .card-head{
+    display:flex; align-items:baseline; gap:12px;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .card-head .num{
+    font-family:'Space Grotesk',sans-serif;
+    color: var(--amber-soft);
+    font-size: 13px;
+    font-weight:600;
+  }
+  .card-head h2{
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .card-note{
+    padding: 0 22px;
+    color: var(--text-dim);
+    font-size: 12.5px;
+    margin: 12px 0 0;
+  }
+  .card-body{ padding: 16px 22px 20px; }
+
+  .callout{
+    border-left: 3px solid var(--amber-soft);
+    background: rgba(255,176,0,0.05);
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-top: 12px;
+  }
+  .callout strong{ color: var(--text); }
+  .callout.warn{
+    border-left-color: var(--red);
+    background: rgba(217,112,79,0.08);
+  }
+  .callout ul{ margin: 6px 0 0; padding-left: 18px; }
+  .callout li{ margin: 3px 0; }
+
+  .codeblock{
+    position: relative;
+    background: #060504;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    margin-top: 10px;
+  }
+  .codeblock .filebar{
+    display:flex; justify-content: space-between; align-items:center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255,176,0,0.03);
+  }
+  .codeblock .filebar span{ color: var(--text-dim); font-size: 11px; }
+  .copy-btn{
+    background: transparent;
+    border: 1px solid var(--amber-soft);
+    color: var(--amber-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .copy-btn:hover{ border-color: var(--amber); color: var(--amber); background: rgba(255,176,0,0.06); }
+  .copy-btn.copied{ border-color: var(--green); color: var(--green); }
+
+  pre{
+    margin: 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 12.8px;
+    line-height: 1.65;
+  }
+  code{ font-family: 'IBM Plex Mono', monospace; color: var(--text); }
+  .c-cmd{ color: var(--green); }
+  .c-comment{ color: var(--text-dim); font-style: italic; }
+  .c-str{ color: #e0b878; }
+  .c-key{ color: var(--amber); }
+
+  .grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px){ .grid-2{ grid-template-columns: 1fr; } }
+
+  table.ref{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin-top: 10px;
+  }
+  table.ref th, table.ref td{
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  table.ref th{
+    color: var(--amber-dim);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  table.ref td.sym{ color: var(--red); white-space: nowrap; }
+  table.ref code{ font-size: 12px; background: rgba(255,176,0,0.06); padding: 1px 5px; border-radius: 3px; }
+
+  .tree{
+    color: var(--text-dim);
+    font-size: 12.5px;
+    line-height: 1.7;
+  }
+  .tree .file{ color: var(--text); }
+  .tree .exec{ color: var(--amber); }
+
+  .flow{
+    display:flex; flex-direction: column; gap: 4px;
+    font-size: 13px;
+  }
+  .flow .step{ color: var(--text); }
+  .flow .arr{ color: var(--amber-soft); padding-left: 6px; }
+
+  footer{
+    text-align:center;
+    color: var(--text-dim);
+    font-size: 11px;
+    padding: 30px 0 50px;
+    border-top: 1px solid var(--line);
+  }
+
+  @media (max-width: 880px){
+    .layout{ grid-template-columns: 1fr; }
+    nav.toc{ position: static; max-height: none; margin-bottom: 12px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .cursor{ animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle light and dark mode">
+  <span class="icon" id="themeIcon">&#9789;</span>
+  <span class="label" id="themeLabel">Dark</span>
+</button>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">vps server guide &middot; aws ec2 or digitalocean droplet</div>
+    <h1>Deploy Laravel on a VPS</h1>
+    <p class="sub">Every command to take a bare Ubuntu server &mdash; on AWS EC2, a DigitalOcean Droplet, or anywhere else you can SSH in &mdash; and turn it into a production Laravel host: Nginx, PHP-FPM, Composer, MySQL, phpMyAdmin, a GitHub SSH connection, Supervisor queue workers, and the Laravel scheduler.</p>
+    <p class="sub" style="margin-top:-16px; font-size:12.5px;">Everywhere you see <code>laravel-app</code>, <code>your-username</code>, <code>your-domain.com</code> or a password placeholder, swap in your own values.</p>
+
+    <div class="stack-pills">
+      <span class="pill">Ubuntu 22.04 / 24.04</span>
+      <span class="pill">Nginx</span>
+      <span class="pill">PHP 8.4-FPM</span>
+      <span class="pill">Composer</span>
+      <span class="pill">MySQL 8</span>
+      <span class="pill">phpMyAdmin</span>
+      <span class="pill">GitHub SSH</span>
+      <span class="pill">Supervisor</span>
+      <span class="pill">Cron scheduler</span>
+      <span class="pill">Let's Encrypt</span>
+    </div>
+
+    <div class="term">
+      <div class="term-bar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <div class="term-title">tail -f storage/logs/laravel.log</div>
+      </div>
+      <div class="term-body" id="bootTerm"></div>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <nav class="toc" id="toc">
+    <div class="group-label">Setup</div>
+    <a href="#s1"><span class="n">01</span> Provision &amp; harden</a>
+    <a href="#s2"><span class="n">02</span> Install Nginx</a>
+    <a href="#s3"><span class="n">03</span> PHP &amp; PHP-FPM</a>
+    <a href="#s4"><span class="n">04</span> Install Composer</a>
+    <a href="#s5"><span class="n">05</span> MySQL setup</a>
+    <a href="#s6"><span class="n">06</span> phpMyAdmin</a>
+    <a href="#s7"><span class="n">07</span> GitHub over SSH</a>
+    <a href="#s8"><span class="n">08</span> Clone &amp; configure</a>
+    <a href="#s9"><span class="n">09</span> Permissions &amp; migrate</a>
+    <a href="#s10"><span class="n">10</span> Nginx for Laravel</a>
+    <a href="#s11"><span class="n">11</span> HTTPS / Let's Encrypt</a>
+    <a href="#s12"><span class="n">12</span> Supervisor workers</a>
+    <a href="#s13"><span class="n">13</span> Scheduler &amp; cron</a>
+    <a href="#s14"><span class="n">14</span> Zero-downtime deploy</a>
+
+    <div class="group-label">Reference</div>
+    <a href="#r1"><span class="n">&middot;</span> Full Nginx vhost</a>
+    <a href="#r2"><span class="n">&middot;</span> Supervisor config</a>
+    <a href="#r3"><span class="n">&middot;</span> Service cheatsheet</a>
+    <a href="#r4"><span class="n">&middot;</span> Artisan cheatsheet</a>
+    <a href="#r5"><span class="n">&middot;</span> .gitignore &amp; .env safety</a>
+    <a href="#r6"><span class="n">&middot;</span> Full setup script</a>
+    <a href="#r7"><span class="n">&middot;</span> Directory &amp; flow map</a>
+    <a href="#r8"><span class="n">&middot;</span> Troubleshooting</a>
+  </nav>
+
+  <main>
+
+    <section class="card" id="s1">
+      <div class="card-head"><span class="num">01</span><h2>Provision &amp; harden the server</h2></div>
+      <div class="card-body">
+        <p class="card-note">Spin up an Ubuntu 22.04 LTS server &mdash; an AWS EC2 instance or a DigitalOcean Droplet both work identically from here on. Add your SSH public key at creation time so you never need a password.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell &middot; from your local machine</span><button class="copy-btn" data-copy="cb1a">Copy</button></div>
+          <pre id="cb1a"><code><span class="c-comment"># AWS EC2 default user is "ubuntu"; DigitalOcean is usually "root"</span>
+<span class="c-cmd">ssh ubuntu@your_server_ip</span>          <span class="c-comment"># AWS</span>
+<span class="c-cmd">ssh root@your_server_ip</span>            <span class="c-comment"># DigitalOcean</span></code></pre>
+        </div>
+        <p class="card-note">Update the box and create a non-root sudo user to work from &mdash; never deploy as root day-to-day.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell &middot; on the server</span><button class="copy-btn" data-copy="cb1b">Copy</button></div>
+          <pre id="cb1b"><code><span class="c-cmd">sudo apt update &amp;&amp; sudo apt upgrade -y</span>
+
+<span class="c-cmd">sudo adduser deploy</span>
+<span class="c-cmd">sudo usermod -aG sudo deploy</span>
+
+<span class="c-comment"># copy your SSH key over to the new user</span>
+<span class="c-cmd">sudo rsync --archive --chown=deploy:deploy ~/.ssh /home/deploy</span>
+
+<span class="c-comment"># log out and back in as the new user from now on</span>
+<span class="c-cmd">exit</span>
+<span class="c-cmd">ssh deploy@your_server_ip</span></code></pre>
+        </div>
+        <p class="card-note">Lock down the firewall and set the timezone.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb1c">Copy</button></div>
+          <pre id="cb1c"><code><span class="c-cmd">sudo ufw allow OpenSSH</span>
+<span class="c-cmd">sudo ufw allow 'Nginx Full'</span>
+<span class="c-cmd">sudo ufw enable</span>
+<span class="c-cmd">sudo ufw status</span>
+
+<span class="c-cmd">sudo timedatectl set-timezone UTC</span>
+<span class="c-cmd">timedatectl</span>          <span class="c-comment"># verify</span></code></pre>
+        </div>
+        <div class="callout">
+          <strong>AWS vs DigitalOcean:</strong> on AWS you must also open ports <code>22</code>, <code>80</code> and <code>443</code> inbound on the instance's <strong>Security Group</strong> in the console &mdash; <code>ufw</code> alone won't let traffic through. On DigitalOcean, either use a <strong>Cloud Firewall</strong> from the dashboard or rely on <code>ufw</code> on the Droplet itself; both need to agree.
+        </div>
+        <div class="callout warn">
+          <strong>Optional but recommended:</strong> disable root SSH login and password authentication once your <code>deploy</code> user and key both work &mdash; edit <code>/etc/ssh/sshd_config</code>, set <code>PermitRootLogin no</code> and <code>PasswordAuthentication no</code>, then <code>sudo systemctl restart ssh</code>.
+        </div>
+        <p class="card-note">Install <strong>fail2ban</strong> to automatically block IPs that fail SSH authentication repeatedly &mdash; a cheap, effective guard against brute-force attacks.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb1d">Copy</button></div>
+          <pre id="cb1d"><code><span class="c-cmd">sudo apt install -y fail2ban</span>
+<span class="c-cmd">sudo systemctl enable fail2ban --now</span>
+<span class="c-cmd">sudo systemctl status fail2ban</span>
+
+<span class="c-comment"># verify it's watching SSH</span>
+<span class="c-cmd">sudo fail2ban-client status sshd</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="s2">
+      <div class="card-head"><span class="num">02</span><h2>Install Nginx</h2></div>
+      <div class="card-body">
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb2">Copy</button></div>
+          <pre id="cb2"><code><span class="c-cmd">sudo apt install -y nginx</span>
+<span class="c-cmd">sudo systemctl enable nginx --now</span>
+<span class="c-cmd">sudo systemctl status nginx</span>
+
+<span class="c-comment"># confirm the default page is served</span>
+<span class="c-cmd">curl -I http://localhost</span></code></pre>
+        </div>
+        <p class="card-note">Visit <code>http://your_server_ip</code> in a browser &mdash; you should see the default "Welcome to nginx!" page.</p>
+      </div>
+    </section>
+
+    <section class="card" id="s3">
+      <div class="card-head"><span class="num">03</span><h2>Install PHP &amp; PHP-FPM</h2></div>
+      <div class="card-body">
+        <p class="card-note">Ubuntu's default repos lag behind, so add the <code>ondrej/php</code> PPA to get current PHP versions and every extension Laravel needs.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb3">Copy</button></div>
+          <pre id="cb3"><code><span class="c-cmd">sudo apt install -y software-properties-common</span>
+<span class="c-cmd">sudo add-apt-repository ppa:ondrej/php -y</span>
+<span class="c-cmd">sudo apt update</span>
+
+<span class="c-cmd">sudo apt install -y php8.4-fpm php8.4-cli php8.4-common \
+  php8.4-mysql php8.4-xml php8.4-mbstring php8.4-curl \
+  php8.4-zip php8.4-bcmath php8.4-gd php8.4-intl \
+  php8.4-opcache php8.4-readline</span>
+
+<span class="c-cmd">php -v</span>
+<span class="c-cmd">sudo systemctl enable php8.4-fpm --now</span>
+<span class="c-cmd">sudo systemctl status php8.4-fpm</span></code></pre>
+        </div>
+        <div class="callout">
+          <strong>Match the PHP version to your Laravel release:</strong> Laravel 12 / 11 need PHP 8.2+, Laravel 10 needs 8.1+. Swap every <code>php8.4</code> above (and later in this guide) for the version your <code>composer.json</code> requires.
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="s4">
+      <div class="card-head"><span class="num">04</span><h2>Install Composer</h2></div>
+      <div class="card-body">
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb4">Copy</button></div>
+          <pre id="cb4"><code><span class="c-cmd">cd ~</span>
+<span class="c-cmd">curl -sS https://getcomposer.org/installer -o composer-setup.php</span>
+
+<span class="c-comment"># verify the installer against Composer's published signature</span>
+<span class="c-cmd">HASH=$(curl -sS https://composer.github.io/installer.sig)</span>
+<span class="c-cmd">php -r "if (hash_file('sha384', 'composer-setup.php') === '$HASH') { echo 'Installer verified'.PHP_EOL; } else { echo 'Installer corrupt'.PHP_EOL; unlink('composer-setup.php'); }"</span>
+
+<span class="c-cmd">sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer</span>
+<span class="c-cmd">rm composer-setup.php</span>
+
+<span class="c-cmd">composer --version</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="s5">
+      <div class="card-head"><span class="num">05</span><h2>Install &amp; secure MySQL</h2></div>
+      <div class="card-body">
+
+        <p class="card-note"><strong>Install &amp; start</strong></p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb5a">Copy</button></div>
+          <pre id="cb5a"><code><span class="c-cmd">sudo apt install -y mysql-server</span>
+<span class="c-cmd">sudo systemctl enable mysql --now</span>
+<span class="c-cmd">sudo systemctl status mysql</span></code></pre>
+        </div>
+
+        <p class="card-note"><strong>Run the secure installation wizard</strong> &mdash; it will walk you through setting a root password, removing anonymous users, disallowing remote root login, and dropping the test database. Answer <strong>Yes</strong> to every prompt.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb5b">Copy</button></div>
+          <pre id="cb5b"><code><span class="c-cmd">sudo mysql_secure_installation</span></code></pre>
+        </div>
+        <div class="callout">
+          <strong>Ubuntu / MySQL 8 note:</strong> on a fresh install the root account uses <code>auth_socket</code> (no password, only reachable via <code>sudo mysql</code>). The wizard will ask <em>"Switch to unix_socket authentication?"</em> — answer <strong>No</strong> to keep password auth available — then <em>"Change the root password?"</em> — answer <strong>Yes</strong> and set a strong password. After this, both <code>sudo mysql</code> and <code>mysql -u root -p</code> will work.
+        </div>
+
+        <p class="card-note"><strong>Log in as root</strong> with the password you just set to confirm it works:</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb5c">Copy</button></div>
+          <pre id="cb5c"><code><span class="c-cmd">mysql -u root -p</span>          <span class="c-comment"># enter the root password when prompted</span></code></pre>
+        </div>
+
+        <p class="card-note"><strong>Inside the MySQL shell</strong> &mdash; create the app database, a dedicated user, and grant that user full privileges on the new database. Never point <code>.env</code> at <code>root</code>.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>sql</span><button class="copy-btn" data-copy="cb5d">Copy</button></div>
+          <pre id="cb5d"><code><span class="c-key">CREATE DATABASE</span> laravel_app <span class="c-key">CHARACTER SET</span> utf8mb4 <span class="c-key">COLLATE</span> utf8mb4_unicode_ci;
+
+<span class="c-key">CREATE USER</span> <span class="c-str">'laravel_user'</span>@<span class="c-str">'localhost'</span> <span class="c-key">IDENTIFIED BY</span> <span class="c-str">'change-this-strong-password'</span>;
+
+<span class="c-key">GRANT ALL PRIVILEGES ON</span> laravel_app.* <span class="c-key">TO</span> <span class="c-str">'laravel_user'</span>@<span class="c-str">'localhost'</span>;
+
+<span class="c-key">FLUSH PRIVILEGES</span>;
+
+<span class="c-key">SHOW GRANTS FOR</span> <span class="c-str">'laravel_user'</span>@<span class="c-str">'localhost'</span>;          <span class="c-comment"># verify</span>
+
+<span class="c-key">EXIT</span>;</code></pre>
+        </div>
+
+        <p class="card-note"><strong>Verify the app user</strong> can connect and see the database:</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb5e">Copy</button></div>
+          <pre id="cb5e"><code><span class="c-cmd">mysql -u laravel_user -p laravel_app</span>          <span class="c-comment"># enter laravel_user's password</span></code></pre>
+        </div>
+        <div class="codeblock">
+          <div class="filebar"><span>sql</span><button class="copy-btn" data-copy="cb5f">Copy</button></div>
+          <pre id="cb5f"><code><span class="c-key">SHOW DATABASES</span>;          <span class="c-comment"># laravel_app must appear in the list</span>
+<span class="c-key">EXIT</span>;</code></pre>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="card" id="s6">
+      <div class="card-head"><span class="num">06</span><h2>Install phpMyAdmin (optional)</h2></div>
+      <div class="card-body">
+        <p class="card-note">The Debian/Ubuntu package auto-configures itself for Apache. Since we're running Nginx, install it, decline the Apache prompt, then wire it up manually.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb6a">Copy</button></div>
+          <pre id="cb6a"><code><span class="c-cmd">sudo apt install -y phpmyadmin</span>
+<span class="c-comment"># when prompted "Web server to reconfigure automatically", press SPACE</span>
+<span class="c-comment"># to deselect apache2 (leave nothing selected), then Tab → OK</span>
+<span class="c-comment"># choose "Yes" to configure a database for phpmyadmin with dbconfig-common</span></code></pre>
+        </div>
+        <p class="card-note">Point a dedicated Nginx server block at it, on its own subdomain so it's never mixed in with the app.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>/etc/nginx/sites-available/phpmyadmin</span><button class="copy-btn" data-copy="cb6b">Copy</button></div>
+          <pre id="cb6b"><code><span class="c-key">server</span> {
+    listen 80;
+    server_name pma.your-domain.com;
+    root /usr/share/phpmyadmin;
+    index index.php;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}</code></pre>
+        </div>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb6c">Copy</button></div>
+          <pre id="cb6c"><code><span class="c-cmd">sudo ln -s /etc/nginx/sites-available/phpmyadmin /etc/nginx/sites-enabled/</span>
+<span class="c-cmd">sudo nginx -t</span>
+<span class="c-cmd">sudo systemctl reload nginx</span></code></pre>
+        </div>
+        <div class="callout warn">
+          <strong>Treat phpMyAdmin as a liability if it's public.</strong> At minimum: put it behind HTTPS (step 11), restrict the server block to your office/home IP with <code>allow</code>/<code>deny</code>, or skip exposing it entirely and reach it over an SSH tunnel instead: <code>ssh -L 8000:localhost:80 deploy@your_server_ip</code>, then browse to <code>localhost:8000</code> with the <code>Host</code> header set to <code>pma.your-domain.com</code> (or just add it to your local <code>/etc/hosts</code>).
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="s7">
+      <div class="card-head"><span class="num">07</span><h2>Connect the server to GitHub over SSH</h2></div>
+      <div class="card-body">
+        <div class="codeblock">
+          <div class="filebar"><span>shell &middot; as the deploy user</span><button class="copy-btn" data-copy="cb7">Copy</button></div>
+          <pre id="cb7"><code><span class="c-cmd">ssh-keygen -t ed25519 -C "deploy@your-server"</span>
+<span class="c-comment"># press Enter to accept the default path, set a passphrase or leave it empty</span>
+
+<span class="c-cmd">eval "$(ssh-agent -s)"</span>
+<span class="c-cmd">ssh-add ~/.ssh/id_ed25519</span>
+
+<span class="c-cmd">cat ~/.ssh/id_ed25519.pub</span>
+<span class="c-comment"># copy the printed key</span></code></pre>
+        </div>
+        <p class="card-note">On GitHub: <strong>Settings → SSH and GPG keys → New SSH key</strong> for account-wide access, or, safer for a single production server, the repository's own <strong>Settings → Deploy keys</strong> for read-only access scoped to that one repo. Paste the public key you just copied.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb7b">Copy</button></div>
+          <pre id="cb7b"><code><span class="c-cmd">ssh -T git@github.com</span>
+<span class="c-comment"># expect: "Hi your-username! You've successfully authenticated..."</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="s8">
+      <div class="card-head"><span class="num">08</span><h2>Clone &amp; configure the Laravel project</h2></div>
+      <div class="card-body">
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb8a">Copy</button></div>
+          <pre id="cb8a"><code><span class="c-cmd">sudo mkdir -p /var/www/laravel-app</span>
+<span class="c-cmd">sudo chown -R $USER:$USER /var/www/laravel-app</span>
+
+<span class="c-cmd">git clone git@github.com:your-username/your-repo.git /var/www/laravel-app</span>
+<span class="c-cmd">cd /var/www/laravel-app</span>
+
+<span class="c-cmd">composer install --optimize-autoloader --no-dev</span></code></pre>
+        </div>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb8b">Copy</button></div>
+          <pre id="cb8b"><code><span class="c-cmd">cp .env.example .env</span>
+<span class="c-cmd">php artisan key:generate</span>
+<span class="c-cmd">nano .env</span></code></pre>
+        </div>
+        <p class="card-note">Set at least these values, matching the database you created in step 05:</p>
+        <div class="codeblock">
+          <div class="filebar"><span>.env</span><button class="copy-btn" data-copy="cb8c">Copy</button></div>
+          <pre id="cb8c"><code><span class="c-key">APP_ENV</span>=production
+<span class="c-key">APP_DEBUG</span>=false
+<span class="c-key">APP_URL</span>=https://your-domain.com
+
+<span class="c-key">DB_CONNECTION</span>=mysql
+<span class="c-key">DB_HOST</span>=127.0.0.1
+<span class="c-key">DB_PORT</span>=3306
+<span class="c-key">DB_DATABASE</span>=laravel_app
+<span class="c-key">DB_USERNAME</span>=laravel_user
+<span class="c-key">DB_PASSWORD</span>=change-this-strong-password</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="s9">
+      <div class="card-head"><span class="num">09</span><h2>Set permissions &amp; run migrations</h2></div>
+      <div class="card-body">
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb9a">Copy</button></div>
+          <pre id="cb9a"><code><span class="c-cmd">sudo chown -R www-data:www-data /var/www/laravel-app</span>
+<span class="c-cmd">sudo find /var/www/laravel-app -type f -exec chmod 644 {} \;</span>
+<span class="c-cmd">sudo find /var/www/laravel-app -type d -exec chmod 755 {} \;</span>
+
+<span class="c-comment"># storage/ and bootstrap/cache/ must stay writable by the web server</span>
+<span class="c-cmd">sudo chmod -R ug+rwx /var/www/laravel-app/storage /var/www/laravel-app/bootstrap/cache</span></code></pre>
+        </div>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb9b">Copy</button></div>
+          <pre id="cb9b"><code><span class="c-cmd">php artisan migrate --force</span>
+<span class="c-cmd">php artisan storage:link</span>
+<span class="c-cmd">php artisan optimize</span>          <span class="c-comment"># cache config, routes, views &amp; events for production</span></code></pre>
+        </div>
+        <div class="callout">
+          <strong>Add your user to the <code>www-data</code> group</strong> (<code>sudo usermod -aG www-data deploy</code>, then log out/in) so you can still edit files as <code>deploy</code> without switching to root every time.
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="s10">
+      <div class="card-head"><span class="num">10</span><h2>Configure Nginx for Laravel</h2></div>
+      <div class="card-body">
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb10a">Copy</button></div>
+          <pre id="cb10a"><code><span class="c-cmd">sudo nano /etc/nginx/sites-available/laravel-app</span></code></pre>
+        </div>
+        <p class="card-note">Paste the vhost below (full copy in the Reference section). The key points: <code>root</code> points at <code>public/</code>, not the project root, and every request that isn't a real file falls through to <code>index.php</code>.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>laravel-app</span><button class="copy-btn" data-copy="cb10b">Copy</button></div>
+          <pre id="cb10b"><code><span class="c-key">server</span> {
+    listen 80;
+    listen [::]:80;
+    server_name your-domain.com www.your-domain.com;
+    root /var/www/laravel-app/public;
+
+    server_tokens off;
+
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
+
+    index index.php;
+    charset utf-8;
+
+    client_max_body_size 20M;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript
+               text/xml application/xml application/xml+rss text/javascript
+               image/svg+xml;
+    gzip_vary on;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    error_page 404 /index.php;
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}</code></pre>
+        </div>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb10c">Copy</button></div>
+          <pre id="cb10c"><code><span class="c-cmd">sudo ln -s /etc/nginx/sites-available/laravel-app /etc/nginx/sites-enabled/</span>
+<span class="c-cmd">sudo unlink /etc/nginx/sites-enabled/default</span>   <span class="c-comment"># optional, removes the placeholder site</span>
+
+<span class="c-cmd">sudo nginx -t</span>
+<span class="c-cmd">sudo systemctl reload nginx</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="s11">
+      <div class="card-head"><span class="num">11</span><h2>Enable HTTPS with Let's Encrypt</h2></div>
+      <div class="card-body">
+        <p class="card-note">Point your domain's DNS <code>A</code> record at the server's IP before running this &mdash; Certbot validates ownership over HTTP first.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb11">Copy</button></div>
+          <pre id="cb11"><code><span class="c-comment"># install via snap — the method Certbot officially recommends</span>
+<span class="c-cmd">sudo snap install --classic certbot</span>
+<span class="c-cmd">sudo ln -sfn /snap/bin/certbot /usr/local/bin/certbot</span>
+<span class="c-cmd">certbot --version</span>          <span class="c-comment"># verify</span>
+
+<span class="c-cmd">sudo certbot --nginx -d your-domain.com -d www.your-domain.com</span>
+<span class="c-comment"># follow the prompts; choose "redirect" to force HTTPS</span>
+
+<span class="c-comment"># confirm auto-renewal works</span>
+<span class="c-cmd">sudo certbot renew --dry-run</span>
+<span class="c-cmd">systemctl list-timers | grep snap.certbot</span>          <span class="c-comment"># renewal timer must appear</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="s12">
+      <div class="card-head"><span class="num">12</span><h2>Set up Supervisor for queue workers</h2></div>
+      <div class="card-body">
+        <p class="card-note">If your app dispatches queued jobs (mail, notifications, imports), a worker needs to run continuously and restart on crash or deploy &mdash; that's Supervisor's job.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb12a">Copy</button></div>
+          <pre id="cb12a"><code><span class="c-cmd">sudo apt install -y supervisor</span>
+<span class="c-cmd">sudo nano /etc/supervisor/conf.d/laravel-worker.conf</span></code></pre>
+        </div>
+        <div class="codeblock">
+          <div class="filebar"><span>laravel-worker.conf</span><button class="copy-btn" data-copy="cb12b">Copy</button></div>
+          <pre id="cb12b"><code>[program:laravel-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/laravel-app/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/www/laravel-app/storage/logs/worker.log
+stopwaitsecs=3600</code></pre>
+        </div>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb12c">Copy</button></div>
+          <pre id="cb12c"><code><span class="c-cmd">sudo supervisorctl reread</span>
+<span class="c-cmd">sudo supervisorctl update</span>
+<span class="c-cmd">sudo supervisorctl start "laravel-worker:*"</span>
+<span class="c-cmd">sudo supervisorctl status</span></code></pre>
+        </div>
+        <div class="callout">
+          <strong>Using Redis for the queue?</strong> Install it with <code>sudo apt install -y redis-server</code> and set <code>QUEUE_CONNECTION=redis</code> in <code>.env</code> &mdash; everything else in this section stays the same.
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="s13">
+      <div class="card-head"><span class="num">13</span><h2>Set up the Laravel scheduler</h2></div>
+      <div class="card-body">
+        <p class="card-note">Laravel's scheduler needs exactly one cron entry, running as <code>www-data</code> so file ownership stays consistent, which calls <code>schedule:run</code> every minute &mdash; Laravel itself decides what actually needs to fire.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb13a">Copy</button></div>
+          <pre id="cb13a"><code><span class="c-cmd">sudo crontab -u www-data -e</span></code></pre>
+        </div>
+        <div class="codeblock">
+          <div class="filebar"><span>crontab</span><button class="copy-btn" data-copy="cb13b">Copy</button></div>
+          <pre id="cb13b"><code>* * * * * cd /var/www/laravel-app &amp;&amp; php artisan schedule:run >> /dev/null 2>&amp;1</code></pre>
+        </div>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb13c">Copy</button></div>
+          <pre id="cb13c"><code><span class="c-cmd">sudo crontab -u www-data -l</span>          <span class="c-comment"># verify it's saved</span>
+<span class="c-cmd">tail -f /var/www/laravel-app/storage/logs/laravel.log</span>   <span class="c-comment"># watch scheduled jobs run</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="s14">
+      <div class="card-head"><span class="num">14</span><h2>Zero-downtime redeploy workflow</h2></div>
+      <div class="card-body">
+        <p class="card-note">A small script wraps the routine "new code just landed on <code>main</code>" flow so it's the same three keystrokes every time.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb14a">Copy</button></div>
+          <pre id="cb14a"><code><span class="c-cmd">nano /var/www/laravel-app/deploy.sh</span></code></pre>
+        </div>
+        <div class="codeblock">
+          <div class="filebar"><span>deploy.sh</span><button class="copy-btn" data-copy="cb14b">Copy</button></div>
+          <pre id="cb14b"><code><span class="c-key">#!/usr/bin/env bash</span>
+<span class="c-key">set</span> -e
+
+<span class="c-cmd">cd /var/www/laravel-app</span>
+
+<span class="c-cmd">php artisan down --retry=60</span>
+
+<span class="c-cmd">git pull origin main</span>
+<span class="c-cmd">composer install --no-dev --optimize-autoloader</span>
+
+<span class="c-cmd">php artisan migrate --force</span>
+<span class="c-cmd">php artisan optimize</span>          <span class="c-comment"># caches config, routes, views &amp; events in one step</span>
+
+<span class="c-cmd">php artisan queue:restart</span>          <span class="c-comment"># signal workers to finish current job then reload new code</span>
+<span class="c-cmd">sudo supervisorctl restart "laravel-worker:*"</span>
+
+<span class="c-cmd">php artisan up</span></code></pre>
+        </div>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cb14c">Copy</button></div>
+          <pre id="cb14c"><code><span class="c-cmd">chmod +x /var/www/laravel-app/deploy.sh</span>
+<span class="c-cmd">./deploy.sh</span></code></pre>
+        </div>
+        <div class="callout">
+          <strong>Never edit files directly on the server.</strong> Every change should go through git &mdash; commit locally, push, then run <code>deploy.sh</code>. If the server has local edits, <code>git pull</code> will conflict.
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="r1">
+      <div class="card-head"><h2>Full Nginx vhost, standalone</h2></div>
+      <div class="card-body">
+        <div class="codeblock">
+          <div class="filebar"><span>/etc/nginx/sites-available/laravel-app</span><button class="copy-btn" data-copy="cbr1">Copy</button></div>
+          <pre id="cbr1"><code><span class="c-key">server</span> {
+    listen 80;
+    listen [::]:80;
+    server_name your-domain.com www.your-domain.com;
+    root /var/www/laravel-app/public;
+
+    server_tokens off;
+
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
+
+    index index.php;
+    charset utf-8;
+
+    client_max_body_size 20M;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript
+               text/xml application/xml application/xml+rss text/javascript
+               image/svg+xml;
+    gzip_vary on;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    error_page 404 /index.php;
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="r2">
+      <div class="card-head"><h2>Supervisor config, standalone</h2></div>
+      <div class="card-body">
+        <div class="codeblock">
+          <div class="filebar"><span>/etc/supervisor/conf.d/laravel-worker.conf</span><button class="copy-btn" data-copy="cbr2">Copy</button></div>
+          <pre id="cbr2"><code>[program:laravel-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/laravel-app/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/www/laravel-app/storage/logs/worker.log
+stopwaitsecs=3600</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="r3">
+      <div class="card-head"><h2>Service cheatsheet</h2></div>
+      <div class="card-body">
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cbr3">Copy</button></div>
+          <pre id="cbr3"><code><span class="c-comment"># nginx</span>
+<span class="c-cmd">sudo systemctl {start|stop|restart|reload|status} nginx</span>
+<span class="c-cmd">sudo nginx -t</span>                          <span class="c-comment"># test config before reloading</span>
+<span class="c-cmd">sudo tail -f /var/log/nginx/error.log</span>
+
+<span class="c-comment"># php-fpm</span>
+<span class="c-cmd">sudo systemctl {start|stop|restart|status} php8.4-fpm</span>
+<span class="c-cmd">sudo tail -f /var/log/php8.4-fpm.log</span>
+
+<span class="c-comment"># mysql</span>
+<span class="c-cmd">sudo systemctl {start|stop|restart|status} mysql</span>
+
+<span class="c-comment"># supervisor / queue workers</span>
+<span class="c-cmd">sudo supervisorctl status</span>
+<span class="c-cmd">sudo supervisorctl restart "laravel-worker:*"</span>
+<span class="c-cmd">sudo supervisorctl {start|stop} "laravel-worker:*"</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="r4">
+      <div class="card-head"><h2>Artisan cheatsheet</h2></div>
+      <div class="card-body">
+        <table class="ref">
+          <tr><th>Command</th><th>What it does</th></tr>
+          <tr><td><code>php artisan migrate --force</code></td><td>Run pending migrations in production without the confirmation prompt.</td></tr>
+          <tr><td><code>php artisan migrate:fresh --seed</code></td><td>Drop all tables, re-migrate, and seed &mdash; staging/dev only, never production.</td></tr>
+          <tr><td><code>php artisan config:cache</code></td><td>Compile <code>.env</code> + config files into one cached file for speed.</td></tr>
+          <tr><td><code>php artisan config:clear</code></td><td>Remove the config cache &mdash; run this if <code>.env</code> changes aren't taking effect.</td></tr>
+          <tr><td><code>php artisan route:cache</code> / <code>route:clear</code></td><td>Cache or clear the route table.</td></tr>
+          <tr><td><code>php artisan view:cache</code> / <code>view:clear</code></td><td>Precompile or clear Blade views.</td></tr>
+          <tr><td><code>php artisan queue:work</code></td><td>Process queued jobs (what Supervisor runs).</td></tr>
+          <tr><td><code>php artisan queue:restart</code></td><td>Signal running workers to finish their current job and restart &mdash; run after every deploy that touches job classes.</td></tr>
+          <tr><td><code>php artisan schedule:list</code></td><td>Show every scheduled task and when it next runs.</td></tr>
+          <tr><td><code>php artisan tinker</code></td><td>Interactive REPL against your app.</td></tr>
+          <tr><td><code>php artisan down</code> / <code>up</code></td><td>Put the app into or out of maintenance mode.</td></tr>
+          <tr><td><code>php artisan storage:link</code></td><td>Symlink <code>public/storage</code> to <code>storage/app/public</code>.</td></tr>
+          <tr><td><code>php artisan optimize</code></td><td>Cache config, routes, views and events in one command — run after every production deploy (replaces the three separate cache commands).</td></tr>
+          <tr><td><code>php artisan optimize:clear</code></td><td>Clear all caches at once — useful when debugging cache-related issues or before rebuilding.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" id="r5">
+      <div class="card-head"><h2>.gitignore &amp; keeping .env safe</h2></div>
+      <div class="card-body">
+        <div class="codeblock">
+          <div class="filebar"><span>.gitignore</span><button class="copy-btn" data-copy="cbr5a">Copy</button></div>
+          <pre id="cbr5a"><code>/vendor
+/node_modules
+/public/storage
+/storage/*.key
+/.env
+/.env.backup
+/.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+.idea
+.vscode</code></pre>
+        </div>
+        <p class="card-note">If <code>.env</code> was ever committed, untrack and rotate every secret it contained:</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cbr5b">Copy</button></div>
+          <pre id="cbr5b"><code><span class="c-cmd">git rm --cached .env</span>
+<span class="c-cmd">git add .gitignore</span>
+<span class="c-cmd">git commit -m <span class="c-str">"Stop tracking .env"</span></span>
+<span class="c-cmd">git push</span>
+
+<span class="c-comment"># then rotate DB_PASSWORD, APP_KEY and any API keys that were exposed</span>
+<span class="c-cmd">chmod 600 .env</span>            <span class="c-comment"># restrict who can read it on the server</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="r6">
+      <div class="card-head"><h2>Complete initial setup (one script)</h2></div>
+      <div class="card-body">
+        <p class="card-note">Every step from 01&ndash;13 back to back. Fill in your domain, repo URL, and database password before running, and open the nano prompts manually when they appear.</p>
+        <div class="codeblock">
+          <div class="filebar"><span>shell</span><button class="copy-btn" data-copy="cbr6">Copy all</button></div>
+          <pre id="cbr6"><code><span class="c-comment"># --- system, firewall &amp; intrusion prevention ---</span>
+<span class="c-cmd">sudo apt update &amp;&amp; sudo apt upgrade -y</span>
+<span class="c-cmd">sudo ufw allow OpenSSH</span>
+<span class="c-cmd">sudo ufw allow 'Nginx Full'</span>
+<span class="c-cmd">sudo ufw enable</span>
+<span class="c-cmd">sudo apt install -y fail2ban &amp;&amp; sudo systemctl enable fail2ban --now</span>
+
+<span class="c-comment"># --- nginx ---</span>
+<span class="c-cmd">sudo apt install -y nginx</span>
+<span class="c-cmd">sudo systemctl enable nginx --now</span>
+
+<span class="c-comment"># --- php ---</span>
+<span class="c-cmd">sudo apt install -y software-properties-common</span>
+<span class="c-cmd">sudo add-apt-repository ppa:ondrej/php -y</span>
+<span class="c-cmd">sudo apt update</span>
+<span class="c-cmd">sudo apt install -y php8.4-fpm php8.4-cli php8.4-common php8.4-mysql \
+  php8.4-xml php8.4-mbstring php8.4-curl php8.4-zip php8.4-bcmath php8.4-gd php8.4-intl \
+  php8.4-opcache php8.4-readline</span>
+<span class="c-cmd">sudo systemctl enable php8.4-fpm --now</span>
+
+<span class="c-comment"># --- composer ---</span>
+<span class="c-cmd">curl -sS https://getcomposer.org/installer -o composer-setup.php</span>
+<span class="c-cmd">sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer</span>
+<span class="c-cmd">rm composer-setup.php</span>
+
+<span class="c-comment"># --- mysql ---</span>
+<span class="c-cmd">sudo apt install -y mysql-server</span>
+<span class="c-cmd">sudo mysql_secure_installation</span>
+<span class="c-comment"># then: CREATE DATABASE laravel_app ...; CREATE USER 'laravel_user'@'localhost' ...;</span>
+
+<span class="c-comment"># --- supervisor ---</span>
+<span class="c-cmd">sudo apt install -y supervisor</span>
+
+<span class="c-comment"># --- certbot (snap method — officially recommended) ---</span>
+<span class="c-cmd">sudo snap install --classic certbot</span>
+<span class="c-cmd">sudo ln -sfn /snap/bin/certbot /usr/local/bin/certbot</span>
+
+<span class="c-comment"># --- project ---</span>
+<span class="c-cmd">sudo mkdir -p /var/www/laravel-app &amp;&amp; sudo chown -R $USER:$USER /var/www/laravel-app</span>
+<span class="c-cmd">git clone git@github.com:your-username/your-repo.git /var/www/laravel-app</span>
+<span class="c-cmd">cd /var/www/laravel-app</span>
+<span class="c-cmd">composer install --optimize-autoloader --no-dev</span>
+<span class="c-cmd">cp .env.example .env</span>
+<span class="c-cmd">php artisan key:generate</span>
+<span class="c-cmd">sudo nano .env</span>   <span class="c-comment"># set APP_ENV, APP_URL, DB_* to match the database above</span>
+
+<span class="c-comment"># --- permissions &amp; database ---</span>
+<span class="c-cmd">sudo chown -R www-data:www-data /var/www/laravel-app</span>
+<span class="c-cmd">sudo chmod -R ug+rwx /var/www/laravel-app/storage /var/www/laravel-app/bootstrap/cache</span>
+<span class="c-cmd">php artisan migrate --force</span>
+<span class="c-cmd">php artisan storage:link</span>
+<span class="c-cmd">php artisan optimize</span>
+
+<span class="c-comment"># --- nginx site, supervisor worker, cron ---</span>
+<span class="c-comment"># paste the vhost from Reference → Full Nginx vhost into:</span>
+<span class="c-cmd">sudo nano /etc/nginx/sites-available/laravel-app</span>
+<span class="c-cmd">sudo ln -s /etc/nginx/sites-available/laravel-app /etc/nginx/sites-enabled/</span>
+<span class="c-cmd">sudo nginx -t &amp;&amp; sudo systemctl reload nginx</span>
+
+<span class="c-cmd">sudo certbot --nginx -d your-domain.com -d www.your-domain.com</span>
+
+<span class="c-comment"># paste the worker config from Reference → Supervisor config into:</span>
+<span class="c-cmd">sudo nano /etc/supervisor/conf.d/laravel-worker.conf</span>
+<span class="c-cmd">sudo supervisorctl reread &amp;&amp; sudo supervisorctl update</span>
+<span class="c-cmd">sudo supervisorctl start "laravel-worker:*"</span>
+
+<span class="c-cmd">sudo crontab -u www-data -e</span>
+<span class="c-comment"># add: * * * * * cd /var/www/laravel-app &amp;&amp; php artisan schedule:run >> /dev/null 2>&amp;1</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="r7">
+      <div class="card-head"><h2>Directory &amp; request-flow map</h2></div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div class="codeblock">
+            <div class="filebar"><span>project tree on the server</span></div>
+            <pre><code class="tree">/var/www/laravel-app/
+├── app/
+├── bootstrap/
+│   └── <span class="exec">cache/</span>          (writable)
+├── config/
+├── public/               ← nginx root
+│   └── <span class="file">index.php</span>
+├── routes/
+├── storage/
+│   ├── <span class="exec">app/</span>            (writable)
+│   ├── <span class="exec">framework/</span>      (writable)
+│   └── <span class="exec">logs/</span>           (writable)
+├── .env                  (chmod 600, never in git)
+├── deploy.sh
+└── artisan
+
+/etc/nginx/sites-available/
+└── <span class="file">laravel-app</span>
+
+/etc/supervisor/conf.d/
+└── <span class="file">laravel-worker.conf</span></code></pre>
+          </div>
+          <div class="codeblock">
+            <div class="filebar"><span>request &amp; job flow</span></div>
+            <pre><code class="tree">Browser (HTTPS)
+        ↓
+Nginx :443 → :80 redirect
+        ↓
+PHP-FPM  (unix socket)
+        ↓
+public/index.php → Kernel → Router → Controller
+        ↓
+Eloquent → MySQL
+
+────────────────────────────
+Supervisor → queue:work → Jobs
+Cron (1/min) → schedule:run → Kernel::schedule()</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="r8">
+      <div class="card-head"><h2>Troubleshooting</h2></div>
+      <div class="card-body">
+        <table class="ref">
+          <tr><th>Symptom</th><th>Likely fix</th></tr>
+          <tr><td class="sym">502 Bad Gateway</td><td>PHP-FPM isn't running, or the socket path in the Nginx vhost doesn't match <code>/run/php/php8.4-fpm.sock</code> for your installed PHP version. Check with <code>sudo systemctl status php8.4-fpm</code> and <code>ls /run/php/</code>.</td></tr>
+          <tr><td class="sym">403 Forbidden</td><td><code>root</code> in the vhost points at the project root instead of <code>public/</code>, or file permissions are too strict. Re-check step 10 and the <code>chmod</code> in step 09.</td></tr>
+          <tr><td class="sym">Blank white page</td><td><code>APP_DEBUG</code> is <code>false</code> so errors are hidden. Temporarily set it to <code>true</code> in <code>.env</code>, reload, check <code>storage/logs/laravel.log</code>, then set it back to <code>false</code>.</td></tr>
+          <tr><td class="sym">"Permission denied" writing to storage/</td><td>Ownership drifted from <code>www-data</code>, usually after a fresh <code>git pull</code> or clone. Re-run the <code>chown</code>/<code>chmod</code> commands from step 09.</td></tr>
+          <tr><td class="sym">.env changes have no effect</td><td>A stale config cache is in play. Run <code>php artisan config:clear</code>, then re-cache with <code>php artisan config:cache</code> if you use it.</td></tr>
+          <tr><td class="sym">Migrations fail on deploy</td><td>Check <code>DB_*</code> values in <code>.env</code> match step 05 exactly, and that the MySQL user has privileges on that database (<code>SHOW GRANTS FOR 'laravel_user'@'localhost';</code>).</td></tr>
+          <tr><td class="sym">Queue jobs never run</td><td><code>supervisorctl status</code> should show the worker as <code>RUNNING</code>. If you changed a job class, run <code>php artisan queue:restart</code> so workers reload the new code.</td></tr>
+          <tr><td class="sym">Scheduled tasks don't fire</td><td>Confirm the cron entry exists for <code>www-data</code> specifically (<code>sudo crontab -u www-data -l</code>), not for <code>root</code> or your own user.</td></tr>
+          <tr><td class="sym"><code>git pull</code> conflicts on the server</td><td>Someone edited a tracked file directly on the server. Never do that &mdash; use <code>git stash</code> or <code>git checkout -- .</code> to discard the local change, then pull again.</td></tr>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>Deploy Laravel on a VPS &middot; works on any Ubuntu 22.04/24.04 server, AWS EC2 or DigitalOcean &middot; Nginx + PHP-FPM + MySQL + Supervisor + cron</footer>
+
+<script>
+  // theme toggle
+  (function(){
+    const root = document.documentElement;
+    const toggle = document.getElementById('themeToggle');
+    const icon = document.getElementById('themeIcon');
+    const label = document.getElementById('themeLabel');
+
+    function apply(theme){
+      root.setAttribute('data-theme', theme);
+      icon.innerHTML = theme === 'light' ? '&#9728;' : '&#9789;';
+      label.textContent = theme === 'light' ? 'Light' : 'Dark';
+    }
+
+    let saved = null;
+    try { saved = localStorage.getItem('theme'); } catch(e) {}
+    const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    apply(saved || (prefersLight ? 'light' : 'dark'));
+
+    toggle.addEventListener('click', () => {
+      const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      apply(next);
+      try { localStorage.setItem('theme', next); } catch(e) {}
+    });
+  })();
+
+  // copy buttons
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-copy');
+      const el = document.getElementById(targetId);
+      const text = el.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = 'Copied ✓';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1600);
+      }).catch(() => {
+        btn.textContent = 'Press Ctrl+C';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
+      });
+    });
+  });
+
+  // active TOC highlighting
+  const links = Array.from(document.querySelectorAll('nav.toc a'));
+  const sections = links.map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const idx = sections.indexOf(entry.target);
+      if (idx === -1) return;
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        links[idx].classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => { if (s) io.observe(s); });
+
+  // boot terminal typing animation
+  const bootLines = [
+    { p: 'nginx', a: '→', t: 'proxy_pass to php8.4-fpm.sock' },
+    { p: 'php-fpm', a: '→', t: 'public/index.php bootstraps Laravel' },
+    { p: 'mysql', a: '→', t: 'laravel_user connected to laravel_app' },
+    { p: 'supervisor', a: '→', t: 'laravel-worker:00 RUNNING' },
+    { p: 'cron · 1/min', a: '→', t: 'artisan schedule:run' },
+    { p: 'deploy.sh', a: '→', t: 'pull → migrate → cache → up' },
+  ];
+  const term = document.getElementById('bootTerm');
+  let li = 0, ci = 0;
+
+  function typeNext() {
+    if (li >= bootLines.length) {
+      term.innerHTML += '\n<span class="cursor"></span>';
+      return;
+    }
+    const line = bootLines[li];
+    const full = `[ ${line.p} ] ${line.a} ${line.t}`;
+    if (ci === 0) {
+      term.innerHTML = term.innerHTML.replace('<span class="cursor"></span>', '');
+    }
+    if (ci <= full.length) {
+      const typed = full.slice(0, ci);
+      const rendered = typed.replace(/^\[ ([^\]]+) \]/, '[ <span class="p">$1</span> ]');
+      const prevLines = term.getAttribute('data-prev') || '';
+      term.innerHTML = prevLines + rendered + '<span class="cursor"></span>';
+      ci++;
+      setTimeout(typeNext, 14 + Math.random() * 18);
+    } else {
+      const prevLines = (term.getAttribute('data-prev') || '') + full.replace(/^\[ ([^\]]+) \]/, '[ <span class="p">$1</span> ]') + '\n';
+      term.setAttribute('data-prev', prevLines);
+      li++; ci = 0;
+      setTimeout(typeNext, 220);
+    }
+  }
+  setTimeout(typeNext, 300);
+</script>
+
+</body>
+</html>
