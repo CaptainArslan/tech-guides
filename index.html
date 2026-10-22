@@ -843,7 +843,7 @@ body {
 /* ── theme ── */
 (function () {
   try {
-    var saved = localStorage.getItem('captainarslan-theme');
+    var saved = localStorage.getItem('theme');
     if (saved === 'light' || saved === 'dark') {
       document.documentElement.setAttribute('data-theme', saved);
     }
@@ -854,7 +854,7 @@ document.getElementById('themeToggle').addEventListener('click', function () {
   var current = document.documentElement.getAttribute('data-theme');
   var next = current === 'light' ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', next);
-  try { localStorage.setItem('captainarslan-theme', next); } catch (e) {}
+  try { localStorage.setItem('theme', next); } catch (e) {}
 });
 
 /* ── tag filter ── */

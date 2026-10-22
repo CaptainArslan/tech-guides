@@ -344,14 +344,94 @@
   @media (prefers-reduced-motion: reduce){
     .cursor{ animation: none; }
   }
+
+  /* ── SITE NAV ── */
+  .site-nav{
+    position: sticky; top: 0; z-index: 200;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    padding: 13px 24px;
+  }
+  .site-nav-inner{
+    max-width: 960px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .site-nav-logo{
+    display: flex; align-items: center; gap: 10px;
+    text-decoration: none; flex-shrink: 0;
+  }
+  .site-nav-icon{
+    width: 32px; height: 32px;
+    background: var(--amber); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px;
+    color: #fff; letter-spacing: -0.03em;
+  }
+  .site-nav-text{
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600;
+    color: var(--text-dim);
+  }
+  .site-nav-accent{ color: var(--amber); }
+  .site-nav-right{ display: flex; align-items: center; gap: 8px; }
+  .site-nav-link{
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    color: var(--text-dim); text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; border: 1px solid transparent;
+    transition: color .15s, background .15s, border-color .15s;
+  }
+  .site-nav-link:hover{ color: var(--text); background: var(--panel-2); border-color: var(--line); }
+  /* repurpose the existing theme-toggle class for the nav icon button */
+  .theme-toggle{
+    position: static !important; top: auto !important; right: auto !important;
+    border-radius: 8px !important; padding: 8px !important;
+    width: 36px; height: 36px; justify-content: center;
+  }
+  .th-moon{ display: block; }
+  .th-sun { display: none; }
+  :root[data-theme="light"] .th-moon{ display: none; }
+  :root[data-theme="light"] .th-sun { display: block; }
+
+  /* ── SITE FOOTER ── */
+  .site-footer{
+    border-top: 1px solid var(--line);
+    padding: 28px 24px; margin-top: 32px;
+  }
+  .site-footer-inner{
+    max-width: 960px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .site-footer-copy{
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim);
+  }
+  .site-footer-copy a{ color: var(--amber); text-decoration: none; }
+  .site-footer-copy a:hover{ text-decoration: underline; }
+  .site-footer-back{
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    color: var(--text-dim); text-decoration: none;
+    display: flex; align-items: center; gap: 5px;
+    transition: color .15s;
+  }
+  .site-footer-back:hover{ color: var(--amber); }
 </style>
 </head>
 <body>
 
-<button class="theme-toggle" id="themeToggle" aria-label="Toggle light and dark mode">
-  <span class="icon" id="themeIcon">&#9789;</span>
-  <span class="label" id="themeLabel">Dark</span>
-</button>
+<nav class="site-nav" role="banner">
+  <div class="site-nav-inner">
+    <a href="../index.html" class="site-nav-logo" aria-label="All Guides">
+      <div class="site-nav-icon" aria-hidden="true">CA</div>
+      <span class="site-nav-text"><span>~/</span><span class="site-nav-accent">guides</span></span>
+    </a>
+    <div class="site-nav-right">
+      <a href="https://github.com/CaptainArslan" class="site-nav-link" target="_blank" rel="noopener noreferrer">github</a>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode">
+        <svg class="th-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="th-sun" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
 
 <div class="hero">
   <div class="hero-inner">
@@ -706,13 +786,9 @@ WantedBy=multi-user.target
   (function(){
     const root = document.documentElement;
     const toggle = document.getElementById('themeToggle');
-    const icon = document.getElementById('themeIcon');
-    const label = document.getElementById('themeLabel');
 
     function apply(theme){
       root.setAttribute('data-theme', theme);
-      icon.innerHTML = theme === 'light' ? '&#9728;' : '&#9789;';
-      label.textContent = theme === 'light' ? 'Light' : 'Dark';
     }
 
     let saved = null;
@@ -797,6 +873,19 @@ WantedBy=multi-user.target
   }
   setTimeout(typeNext, 300);
 </script>
+
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p class="site-footer-copy">
+      Built by <a href="https://github.com/CaptainArslan" target="_blank" rel="noopener noreferrer">CaptainArslan</a>.
+      Free to use, copy &amp; adapt.
+    </p>
+    <a href="../index.html" class="site-footer-back">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      All Guides
+    </a>
+  </div>
+</footer>
 
 </body>
 </html>
