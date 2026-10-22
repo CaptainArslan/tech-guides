@@ -8,53 +8,53 @@
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
   :root{
-    --bg: #0a0908;
-    --panel: #14120d;
-    --panel-2: #1c1912;
-    --line: #332c1f;
-    --amber: #ffb000;
-    --amber-dim: #c98a2c;
-    --amber-soft: #7a5a1f;
-    --text: #e8dfc8;
-    --text-dim: #a89a78;
-    --green: #7ec97a;
-    --red: #d9704f;
+    --bg: #0a0a0b;
+    --panel: #111114;
+    --panel-2: #1b1b1f;
+    --line: #26262a;
+    --amber: #d97706;
+    --amber-dim: #b45309;
+    --amber-soft: #78350f;
+    --text: #e3dfd7;
+    --text-dim: #9a9691;
+    --green: #4ade80;
+    --red: #f87171;
     color-scheme: dark;
   }
 
   :root[data-theme="light"]{
-    --bg: #f6f2e8;
-    --panel: #ffffff;
-    --panel-2: #efe8d6;
-    --line: #ddd2b0;
-    --amber: #a86a00;
-    --amber-dim: #8a5a12;
-    --amber-soft: #c9a15a;
-    --text: #241f14;
-    --text-dim: #6b6048;
-    --green: #3f7a3a;
-    --red: #b24d2c;
+    --bg: #f8f7f4;
+    --panel: #efece6;
+    --panel-2: #e5e1da;
+    --line: #dbd7d0;
+    --amber: #b45309;
+    --amber-dim: #d97706;
+    --amber-soft: #fef3c7;
+    --text: #1a1815;
+    --text-dim: #6b6560;
+    --green: #15803d;
+    --red: #dc2626;
     color-scheme: light;
   }
 
   :root[data-theme="light"] body::before{ display: none; }
-  :root[data-theme="light"] .term-body{ color: #2f7a3a; }
-  :root[data-theme="light"] .term{ box-shadow: 0 0 0 1px rgba(168,106,0,0.06), 0 20px 50px -25px rgba(0,0,0,0.15); }
+  :root[data-theme="light"] .term-body{ color: #15803d; }
+  :root[data-theme="light"] .term{ box-shadow: 0 0 0 1px rgba(180,83,9,0.06), 0 20px 50px -25px rgba(0,0,0,0.1); }
   :root[data-theme="light"] .hero{
-    background: radial-gradient(ellipse 900px 400px at 50% -10%, rgba(168,106,0,0.06), transparent 70%);
+    background: radial-gradient(ellipse 900px 400px at 50% -10%, rgba(180,83,9,0.06), transparent 70%);
   }
 
   *{ box-sizing: border-box; }
   html{ scroll-behavior: smooth; }
-  ::selection{ background: var(--amber); color: #0a0908; }
+  ::selection{ background: var(--amber); color: #0a0a0b; }
 
   body{
     margin:0;
     background: var(--bg);
     color: var(--text);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px;
-    line-height: 1.6;
+    font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
     transition: background-color .2s ease, color .2s ease;
   }
 
@@ -96,8 +96,8 @@
     pointer-events: none;
     background: repeating-linear-gradient(
       0deg,
-      rgba(255,176,0,0.015) 0px,
-      rgba(255,176,0,0.015) 1px,
+      rgba(217,119,6,0.015) 0px,
+      rgba(217,119,6,0.015) 1px,
       transparent 1px,
       transparent 3px
     );
@@ -118,7 +118,7 @@
     padding: 64px 32px 40px;
     border-bottom: 1px solid var(--line);
     background:
-      radial-gradient(ellipse 900px 400px at 50% -10%, rgba(255,176,0,0.08), transparent 70%);
+      radial-gradient(ellipse 900px 400px at 50% -10%, rgba(217,119,6,0.08), transparent 70%);
   }
   .hero-inner{ max-width: 920px; margin: 0 auto; }
   .eyebrow{
@@ -158,7 +158,7 @@
   .series-nav a.current{
     color: var(--amber);
     border-color: var(--amber-soft);
-    background: rgba(255,176,0,0.06);
+    background: rgba(217,119,6,0.06);
     cursor: default;
   }
 
@@ -166,7 +166,7 @@
     background: #060504;
     border: 1px solid var(--line);
     border-radius: 8px;
-    box-shadow: 0 0 0 1px rgba(255,176,0,0.03), 0 20px 60px -20px rgba(0,0,0,0.6);
+    box-shadow: 0 0 0 1px rgba(217,119,6,0.03), 0 20px 60px -20px rgba(0,0,0,0.6);
     overflow: hidden;
   }
   .term-bar{
@@ -280,7 +280,7 @@
     display:flex; justify-content: space-between; align-items:center;
     padding: 8px 12px;
     border-bottom: 1px solid var(--line);
-    background: rgba(255,176,0,0.03);
+    background: rgba(217,119,6,0.03);
   }
   .codeblock .filebar span{ color: var(--text-dim); font-size: 11px; }
   .copy-btn{
@@ -294,7 +294,7 @@
     cursor: pointer;
     transition: all .15s;
   }
-  .copy-btn:hover{ border-color: var(--amber); color: var(--amber); background: rgba(255,176,0,0.06); }
+  .copy-btn:hover{ border-color: var(--amber); color: var(--amber); background: rgba(217,119,6,0.06); }
   .copy-btn.copied{ border-color: var(--green); color: var(--green); }
 
   pre{
