@@ -522,6 +522,28 @@ body {
 .guide-card[hidden] { display: none !important; }
 .series-block[hidden] { display: none !important; }
 
+/* featured badge on card bar */
+.card-featured {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 3px; margin-left: auto; margin-right: 2px;
+  background: rgba(251,191,36,.12); color: #fbbf24; border: 1px solid rgba(251,191,36,.28);
+  white-space: nowrap; flex-shrink: 0;
+}
+:root[data-theme="light"] .card-featured {
+  background: rgba(180,83,9,.1); color: #b45309; border-color: rgba(180,83,9,.25);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .card-featured {
+    background: rgba(180,83,9,.1); color: #b45309; border-color: rgba(180,83,9,.25);
+  }
+}
+
+/* new badge on series header */
+.badge-new {
+  background: rgba(74,222,128,.1); color: var(--green); border: 1px solid rgba(74,222,128,.25);
+}
+
 /* ── FOOTER ── */
 .footer {
   border-top: 1px solid var(--border);
@@ -617,17 +639,17 @@ body {
       <p class="hero-desc">Step-by-step guides for deploying Python and Laravel apps on Ubuntu VPS. Every command block has a copy button — no manual selecting required.</p>
       <div class="hero-stats" aria-label="Site statistics">
         <div class="stat">
-          <span class="stat-num">3</span>
+          <span class="stat-num">4</span>
           <span class="stat-label">guides</span>
         </div>
         <div class="stat-div" aria-hidden="true"></div>
         <div class="stat">
-          <span class="stat-num">47+</span>
+          <span class="stat-num">52+</span>
           <span class="stat-label">steps</span>
         </div>
         <div class="stat-div" aria-hidden="true"></div>
         <div class="stat">
-          <span class="stat-num">2</span>
+          <span class="stat-num">3</span>
           <span class="stat-label">stacks</span>
         </div>
       </div>
@@ -651,8 +673,11 @@ body {
   <div class="filter-inner">
     <span class="filter-lbl" id="filter-lbl">filter:</span>
     <button class="tag-btn active" data-tag="all" aria-pressed="true">all</button>
+    <button class="tag-btn" data-tag="featured" aria-pressed="false">★ featured</button>
     <button class="tag-btn" data-tag="python" aria-pressed="false">python</button>
     <button class="tag-btn" data-tag="laravel" aria-pressed="false">laravel</button>
+    <button class="tag-btn" data-tag="php" aria-pressed="false">php</button>
+    <button class="tag-btn" data-tag="security" aria-pressed="false">security</button>
     <button class="tag-btn" data-tag="nginx" aria-pressed="false">nginx</button>
     <button class="tag-btn" data-tag="systemd" aria-pressed="false">systemd</button>
     <button class="tag-btn" data-tag="mysql" aria-pressed="false">mysql</button>
@@ -663,8 +688,68 @@ body {
 <main class="guides-section" id="guides">
   <div class="guides-inner">
 
+    <!-- STANDALONE: PHP Security Update -->
+    <div class="series-block" id="series-php" data-date="2026-10-22" data-featured="true" data-tags="php ubuntu security nginx apt featured">
+      <div class="series-hd">
+        <span class="series-hd-text">Guide — Security</span>
+        <div class="series-hd-line"></div>
+        <span class="series-badge badge-new">new</span>
+      </div>
+      <div class="card-grid single">
+
+        <a href="./php-security-update/index.html"
+           class="guide-card"
+           data-tags="php ubuntu security nginx apt featured"
+           data-featured="true"
+           aria-label="PHP security patch guide">
+          <div class="card-bar">
+            <div class="card-dots">
+              <div class="dot dot-r"></div>
+              <div class="dot dot-y"></div>
+              <div class="dot dot-g"></div>
+            </div>
+            <span class="card-featured">★ featured</span>
+            <span class="card-filename">php-security-update/index.html</span>
+          </div>
+          <div class="card-body">
+            <p class="card-eyebrow">Security Guide &middot; PHP &middot; Ubuntu</p>
+            <h2 class="card-title">Patch PHP on Ubuntu — Security Update Guide</h2>
+            <p class="card-desc">Apply PHP security patches on a live Ubuntu server without downtime. Covers apt update, targeted PHP-only upgrade, restarting PHP-FPM and Nginx or Apache, and verifying the patch took effect.</p>
+            <div class="card-tags">
+              <span class="tag">php</span>
+              <span class="tag">security</span>
+              <span class="tag">ubuntu</span>
+              <span class="tag">nginx</span>
+              <span class="tag">php-fpm</span>
+              <span class="tag">apt</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <div class="card-metas">
+              <span class="card-meta">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                ~10 min
+              </span>
+              <span class="card-meta">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                5 steps
+              </span>
+              <span class="card-meta">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                patch now
+              </span>
+            </div>
+            <div class="card-arrow" aria-hidden="true">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+          </div>
+        </a>
+
+      </div>
+    </div><!-- /series-block php -->
+
     <!-- SERIES: Ubuntu Server Guide -->
-    <div class="series-block" id="series-python" data-tags="python nginx systemd ubuntu gunicorn certbot https">
+    <div class="series-block" id="series-python" data-date="2026-09-15" data-tags="python nginx systemd ubuntu gunicorn certbot https">
       <div class="series-hd">
         <span class="series-hd-text">Series — Ubuntu Server Guide</span>
         <div class="series-hd-line"></div>
@@ -760,7 +845,7 @@ body {
     </div><!-- /series-block python -->
 
     <!-- STANDALONE: Laravel VPS -->
-    <div class="series-block" id="series-laravel" data-tags="laravel php nginx mysql supervisor certbot ubuntu fail2ban phpmyadmin">
+    <div class="series-block" id="series-laravel" data-date="2026-10-01" data-featured="true" data-tags="laravel php nginx mysql supervisor certbot ubuntu fail2ban phpmyadmin featured">
       <div class="series-hd">
         <span class="series-hd-text">Guide — Laravel</span>
         <div class="series-hd-line"></div>
@@ -770,7 +855,8 @@ body {
 
         <a href="./deploy-laravel-vps/index.html"
            class="guide-card"
-           data-tags="laravel php nginx mysql supervisor certbot fail2ban phpmyadmin ubuntu"
+           data-tags="laravel php nginx mysql supervisor certbot fail2ban phpmyadmin ubuntu featured"
+           data-featured="true"
            aria-label="Deploy Laravel on a VPS guide">
           <div class="card-bar">
             <div class="card-dots">
@@ -778,6 +864,7 @@ body {
               <div class="dot dot-y"></div>
               <div class="dot dot-g"></div>
             </div>
+            <span class="card-featured">★ featured</span>
             <span class="card-filename">deploy-laravel-vps/index.html</span>
           </div>
           <div class="card-body">
@@ -832,7 +919,7 @@ body {
     <div class="footer-meta">
       <span>Oct 2026</span>
       <span class="footer-dot">&middot;</span>
-      <span>3 guides</span>
+      <span>4 guides</span>
       <span class="footer-dot">&middot;</span>
       <span>0 lorem ipsum</span>
     </div>
@@ -888,6 +975,19 @@ tagBtns.forEach(function (btn) {
   });
 });
 
+/* ── sort series blocks: newest date first ── */
+(function () {
+  var inner = document.querySelector('.guides-inner');
+  if (!inner) return;
+  var blocks = Array.from(inner.querySelectorAll(':scope > .series-block'));
+  blocks.sort(function (a, b) {
+    var da = a.dataset.date || '0';
+    var db = b.dataset.date || '0';
+    return db.localeCompare(da);
+  });
+  blocks.forEach(function (b) { inner.appendChild(b); });
+})();
+
 /* ── terminal animation ── */
 (function () {
   var body = document.getElementById('termBody');
@@ -931,6 +1031,8 @@ tagBtns.forEach(function (btn) {
 
     addOutput('');
     await sleep(80);
+    addOutput('<span class="t-dir">php-security-update/</span>     <span class="t-comment"># PHP &middot; Security &middot; Ubuntu ★ new</span>');
+    await sleep(80);
     addOutput('<span class="t-dir">deploy-laravel-vps/</span>      <span class="t-comment"># Laravel &middot; PHP 8.4 &middot; MySQL</span>');
     await sleep(100);
     addOutput('<span class="t-dir">python-systemd-guide/</span>    <span class="t-comment"># Python &middot; systemd &middot; Nginx</span>');
@@ -944,8 +1046,8 @@ tagBtns.forEach(function (btn) {
 
     addOutput('');
     addOutput('{');
-    addOutput('  <span class="t-accent">"guides"</span>: <span class="t-dir">3</span>,');
-    addOutput('  <span class="t-accent">"steps"</span>: <span class="t-dir">47</span>,');
+    addOutput('  <span class="t-accent">"guides"</span>: <span class="t-dir">4</span>,');
+    addOutput('  <span class="t-accent">"steps"</span>: <span class="t-dir">52</span>,');
     addOutput('  <span class="t-accent">"lorem_ipsum"</span>: <span class="t-dir">0</span>,');
     addOutput('  <span class="t-accent">"copy_paste"</span>: <span class="t-dir">true</span>');
     addOutput('}');

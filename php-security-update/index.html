@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patch PHP on Ubuntu — Security Update Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --bg:        #0a0a0b;
+  --panel:     #111114;
+  --panel-2:   #1b1b1f;
+  --panel-3:   #252529;
+  --line:      #26262a;
+  --line-2:    #38383d;
+  --amber:     #d97706;
+  --amber-dim: #b45309;
+  --amber-soft:#78350f;
+  --text:      #e3dfd7;
+  --text-dim:  #9a9691;
+  --text-3:    #66625d;
+  --green:     #4ade80;
+  --blue:      #60a5fa;
+  --red:       #f87171;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --bg:        #f8f7f4;
+  --panel:     #efece6;
+  --panel-2:   #e5e1da;
+  --panel-3:   #d9d5cc;
+  --line:      #dbd7d0;
+  --line-2:    #ccc8c0;
+  --amber:     #b45309;
+  --amber-dim: #d97706;
+  --amber-soft:#fef3c7;
+  --text:      #1a1815;
+  --text-dim:  #6b6560;
+  --text-3:    #9b9590;
+  --green:     #15803d;
+  --blue:      #2563eb;
+  --red:       #dc2626;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(217,119,6,0.015) 0px,
+    rgba(217,119,6,0.015) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  z-index: 999;
+  mix-blend-mode: overlay;
+}
+:root[data-theme="light"] body::before { display: none; }
+
+/* ── NAV ── */
+.site-nav {
+  position: sticky; top: 0; z-index: 200;
+  background: var(--bg); border-bottom: 1px solid var(--line); padding: 13px 24px;
+}
+.site-nav-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.site-nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+.site-nav-icon {
+  width: 32px; height: 32px; background: var(--amber); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px;
+  color: #fff; letter-spacing: -0.03em;
+}
+.site-nav-text { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: var(--text-dim); }
+.site-nav-accent { color: var(--amber); }
+.site-nav-right { display: flex; align-items: center; gap: 8px; }
+.site-nav-link {
+  font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim);
+  text-decoration: none; padding: 6px 12px; border-radius: 6px; border: 1px solid transparent;
+  transition: color .15s, background .15s, border-color .15s;
+}
+.site-nav-link:hover { color: var(--text); background: var(--panel-2); border-color: var(--line); }
+.theme-toggle {
+  border-radius: 8px; padding: 8px;
+  width: 36px; height: 36px;
+  background: var(--panel); border: 1px solid var(--line); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; color: var(--text-dim);
+  transition: color .15s, border-color .15s;
+}
+.theme-toggle:hover { color: var(--amber); border-color: var(--amber); }
+.th-moon { display: block; }
+.th-sun  { display: none; }
+:root[data-theme="light"] .th-moon { display: none; }
+:root[data-theme="light"] .th-sun  { display: block; }
+
+/* ── HERO ── */
+.hero {
+  border-bottom: 1px solid var(--line);
+  padding: 56px 24px 48px;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse 900px 400px at 50% -10%, rgba(217,119,6,0.08), transparent 70%);
+}
+:root[data-theme="light"] .hero {
+  background: radial-gradient(ellipse 900px 400px at 50% -10%, rgba(180,83,9,0.06), transparent 70%);
+}
+.hero-inner { max-width: 960px; margin: 0 auto; }
+.hero-eyebrow {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--amber); margin-bottom: 16px;
+}
+.hero-title {
+  font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 700;
+  line-height: 1.2; letter-spacing: -0.025em; text-wrap: balance;
+  margin-bottom: 16px;
+}
+.hero-title .hl { color: var(--amber); }
+.hero-desc {
+  font-size: 15px; color: var(--text-dim); line-height: 1.75;
+  max-width: 62ch; margin-bottom: 28px;
+}
+.hero-meta {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.meta-badge {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500;
+  padding: 5px 12px; border-radius: 6px; display: flex; align-items: center; gap: 6px;
+}
+.meta-badge.time   { background: rgba(217,119,6,.1);  color: var(--amber);  border: 1px solid rgba(217,119,6,.25); }
+.meta-badge.os     { background: rgba(96,165,250,.1); color: var(--blue);   border: 1px solid rgba(96,165,250,.25); }
+.meta-badge.level  { background: rgba(74,222,128,.1); color: var(--green);  border: 1px solid rgba(74,222,128,.25); }
+.meta-badge.alert  { background: rgba(248,113,113,.1);color: var(--red);    border: 1px solid rgba(248,113,113,.25); }
+
+/* ── LAYOUT ── */
+.content { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+
+/* section header */
+.section-hd {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 24px; margin-top: 48px;
+}
+.section-hd:first-child { margin-top: 0; }
+.section-num {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
+  color: var(--amber); letter-spacing: .05em; flex-shrink: 0;
+}
+.section-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+.section-line { flex: 1; height: 1px; background: var(--line); }
+
+/* prose */
+p { color: var(--text-dim); margin-bottom: 16px; }
+p:last-child { margin-bottom: 0; }
+strong { color: var(--text); font-weight: 600; }
+
+/* info/warning callout */
+.callout {
+  padding: 16px 18px; border-radius: 8px; margin-bottom: 24px;
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.callout.info  { background: rgba(96,165,250,.07);  border: 1px solid rgba(96,165,250,.2); }
+.callout.warn  { background: rgba(248,113,113,.07); border: 1px solid rgba(248,113,113,.2); }
+.callout.tip   { background: rgba(74,222,128,.07);  border: 1px solid rgba(74,222,128,.2); }
+.callout-icon  { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+.callout.info  .callout-icon { color: var(--blue); }
+.callout.warn  .callout-icon { color: var(--red); }
+.callout.tip   .callout-icon { color: var(--green); }
+.callout-text  { font-size: 14px; color: var(--text-dim); line-height: 1.65; }
+.callout-text strong { color: var(--text); }
+
+/* terminal block */
+.cb {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.cb-bar {
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+  padding: 9px 14px;
+  display: flex; align-items: center; gap: 6px;
+}
+.dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.dot-r { background: #ff5f57; }
+.dot-y { background: #febc2e; }
+.dot-g { background: #28c840; }
+.cb-filename {
+  font-size: 10px; color: var(--text-3); margin: 0 auto;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cb-copy {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500;
+  padding: 3px 9px; border-radius: 4px;
+  background: transparent; border: 1px solid var(--line-2); color: var(--text-3);
+  cursor: pointer; transition: all .15s; white-space: nowrap; flex-shrink: 0;
+}
+.cb-copy:hover { border-color: var(--amber); color: var(--amber); }
+.cb-copy.copied { border-color: var(--green); color: var(--green); }
+.cb-body {
+  padding: 16px 18px 18px;
+  font-size: 12.5px; line-height: 1.85; overflow-x: auto;
+}
+.cb-body pre { white-space: pre; }
+.t-comment { color: var(--text-3); }
+.t-prompt  { color: var(--green); }
+.t-out     { color: var(--text-dim); }
+.t-amber   { color: var(--amber); }
+.t-blue    { color: var(--blue); }
+.t-green   { color: var(--green); }
+.t-red     { color: var(--red); }
+
+/* inline code */
+code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--amber);
+}
+
+/* option tabs */
+.option-tabs {
+  display: flex; gap: 2px; margin-bottom: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 0 14px;
+  background: var(--panel-2);
+}
+.opt-tab {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500;
+  padding: 8px 14px; border: none; background: transparent; cursor: pointer;
+  color: var(--text-3); border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color .15s, border-color .15s;
+}
+.opt-tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+.opt-panel { display: none; padding: 16px 18px 18px; font-size: 12.5px; line-height: 1.85; }
+.opt-panel.active { display: block; }
+
+/* step summary table */
+.step-table {
+  width: 100%; border-collapse: collapse; margin-bottom: 24px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+}
+.step-table th {
+  text-align: left; padding: 8px 14px;
+  background: var(--panel-2); color: var(--text-3);
+  border-bottom: 1px solid var(--line); font-weight: 600; font-size: 10px;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.step-table td {
+  padding: 11px 14px; border-bottom: 1px solid var(--line); color: var(--text-dim);
+}
+.step-table tr:last-child td { border-bottom: none; }
+.step-table td:first-child { color: var(--amber); font-weight: 600; }
+.step-table-wrap {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  overflow: hidden; margin-bottom: 24px;
+}
+
+/* verify ok row */
+.ok-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.ok-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0;
+}
+.ok-text { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-dim); }
+
+/* ── FOOTER ── */
+.site-footer { border-top: 1px solid var(--line); padding: 28px 24px; margin-top: 32px; }
+.site-footer-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.site-footer-copy { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim); }
+.site-footer-copy a { color: var(--amber); text-decoration: none; }
+.site-footer-copy a:hover { text-decoration: underline; }
+.site-footer-back {
+  font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim);
+  text-decoration: none; display: flex; align-items: center; gap: 5px; transition: color .15s;
+}
+.site-footer-back:hover { color: var(--amber); }
+
+/* responsive */
+@media (max-width: 640px) {
+  .hero { padding: 40px 16px 36px; }
+  .content { padding: 36px 16px 64px; }
+  .site-nav { padding: 12px 16px; }
+  .site-footer { padding: 24px 16px; }
+  .hero-title { font-size: 1.7rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="site-nav" role="banner">
+  <div class="site-nav-inner">
+    <a href="../index.html" class="site-nav-logo" aria-label="All Guides">
+      <div class="site-nav-icon" aria-hidden="true">CA</div>
+      <span class="site-nav-text"><span>~/</span><span class="site-nav-accent">guides</span></span>
+    </a>
+    <div class="site-nav-right">
+      <a href="https://github.com/CaptainArslan" class="site-nav-link" target="_blank" rel="noopener noreferrer">github</a>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode">
+        <svg class="th-moon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="th-sun" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-inner">
+    <p class="hero-eyebrow">// security patch &middot; Ubuntu &middot; PHP</p>
+    <h1 class="hero-title">Patch PHP on Ubuntu —<br><span class="hl">Security Update Guide</span></h1>
+    <p class="hero-desc">How to apply PHP security patches on an Ubuntu server running Nginx or Apache. Update package lists, upgrade PHP in-place, restart the right services, and confirm the patch took effect — without downtime.</p>
+    <div class="hero-meta">
+      <span class="meta-badge time">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        ~10 min
+      </span>
+      <span class="meta-badge os">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Ubuntu 20.04 / 22.04 / 24.04
+      </span>
+      <span class="meta-badge level">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        5 steps
+      </span>
+      <span class="meta-badge alert">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        patch immediately
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- ── CONTENT ── -->
+<main class="content">
+
+  <!-- quick reference -->
+  <div class="section-hd">
+    <span class="section-num">00</span>
+    <h2 class="section-title">Quick Reference — All Commands</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="callout info">
+    <span class="callout-icon">ℹ</span>
+    <p class="callout-text">If you just need the commands, copy this block and run it on your server. Replace <strong>8.3</strong> with your PHP version (check with <code>php -v</code>). If you use Apache instead of Nginx, swap the last two commands — see Step 04 below.</p>
+  </div>
+
+  <div class="cb">
+    <div class="cb-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span class="cb-filename">bash — all-in-one patch</span>
+      <button class="cb-copy" data-target="qr">copy</button>
+    </div>
+    <div class="cb-body">
+<pre id="qr"><span class="t-comment"># 1. Refresh package lists</span>
+sudo apt update
+
+<span class="t-comment"># 2. Upgrade PHP packages only (safe, targeted)</span>
+sudo apt install --only-upgrade 'php*'
+
+<span class="t-comment"># 3. Restart PHP-FPM (replace 8.3 with your version)</span>
+sudo systemctl restart php8.3-fpm
+
+<span class="t-comment"># 4. Reload Nginx</span>
+sudo systemctl reload nginx
+
+<span class="t-comment"># 5. Verify</span>
+php -v</pre>
+    </div>
+  </div>
+
+  <!-- step table -->
+  <div class="step-table-wrap">
+    <table class="step-table" aria-label="Steps overview">
+      <thead>
+        <tr>
+          <th>Step</th><th>Command</th><th>What it does</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>01</td><td>php -v</td><td>Check which PHP version is installed</td></tr>
+        <tr><td>02</td><td>apt update</td><td>Fetch latest package metadata from Ubuntu's repos</td></tr>
+        <tr><td>03</td><td>apt install --only-upgrade 'php*'</td><td>Upgrade every installed PHP package in-place</td></tr>
+        <tr><td>04</td><td>systemctl restart php8.x-fpm</td><td>Load the new PHP binary into memory</td></tr>
+        <tr><td>05</td><td>systemctl reload nginx</td><td>Signal Nginx to reconnect to the updated FPM socket</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  <!-- step 01 -->
+  <div class="section-hd">
+    <span class="section-num">01</span>
+    <h2 class="section-title">Check Your Current PHP Version</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <p>Before patching, record your exact PHP version. You'll need it to restart the right <code>php-fpm</code> service in Step 04.</p>
+
+  <div class="cb">
+    <div class="cb-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span class="cb-filename">bash</span>
+      <button class="cb-copy" data-target="s01">copy</button>
+    </div>
+    <div class="cb-body">
+<pre id="s01">php -v</pre>
+    </div>
+  </div>
+
+  <p>Expected output — the version string like <code>PHP 8.3.x</code> tells you which FPM service name to use:</p>
+
+  <div class="cb">
+    <div class="cb-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span class="cb-filename">output</span>
+    </div>
+    <div class="cb-body">
+<pre><span class="t-out">PHP <span class="t-amber">8.3.14</span> (cli) (built: Nov 19 2024 10:38:19) (NTS)
+Copyright (c) The PHP Group
+Zend Engine v4.3.14, Copyright (c) Zend Technologies
+    with Zend OPcache v8.3.14, Copyright (c), by Zend Technologies</span></pre>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <span class="callout-icon">→</span>
+    <p class="callout-text">If you have multiple PHP versions installed, run <code>update-alternatives --list php</code> to see all of them. Each version has its own <code>php-fpm</code> service that must be restarted separately.</p>
+  </div>
+
+
+  <!-- step 02 -->
+  <div class="section-hd">
+    <span class="section-num">02</span>
+    <h2 class="section-title">Update Package Lists</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <p>This does not install or change anything — it only tells APT to fetch the latest list of available packages and versions from Ubuntu's repositories. Without this, <code>apt install</code> wouldn't know a newer PHP version exists.</p>
+
+  <div class="cb">
+    <div class="cb-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span class="cb-filename">bash</span>
+      <button class="cb-copy" data-target="s02">copy</button>
+    </div>
+    <div class="cb-body">
+<pre id="s02">sudo apt update</pre>
+    </div>
+  </div>
+
+  <p>If you use a PPA like <strong>ondrej/php</strong> for newer PHP releases, it's refreshed too. You'll see a line like <code>Hit:N https://ppa.launchpadcontent.net/ondrej/php/ubuntu jammy InRelease</code> in the output.</p>
+
+
+  <!-- step 03 -->
+  <div class="section-hd">
+    <span class="section-num">03</span>
+    <h2 class="section-title">Upgrade PHP Packages</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <p>You have two options. <strong>Option A</strong> is safer and more targeted — it only upgrades PHP-related packages and won't touch anything else on your server. <strong>Option B</strong> upgrades everything, which is fine if you're comfortable with a full system update.</p>
+
+  <div class="cb">
+    <div class="cb-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span class="cb-filename">bash</span>
+      <div class="option-tabs">
+        <button class="opt-tab active" data-panel="opt-a">Option A — PHP only</button>
+        <button class="opt-tab" data-panel="opt-b">Option B — full upgrade</button>
+      </div>
+      <button class="cb-copy" data-target="opt-a-code">copy</button>
+    </div>
+    <div id="opt-a" class="opt-panel active">
+<pre id="opt-a-code"><span class="t-comment"># Upgrade only PHP packages — won't touch other system packages</span>
+sudo apt install --only-upgrade 'php*'</pre>
+    </div>
+    <div id="opt-b" class="opt-panel">
+<pre id="opt-b-code"><span class="t-comment"># Full system upgrade — includes PHP and everything else</span>
+sudo apt upgrade</pre>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <span class="callout-icon">!</span>
+    <p class="callout-text"><strong>Note:</strong> Neither option upgrades between major PHP versions (e.g., 8.2 → 8.3). That requires switching repositories. These commands apply security patches within your current major.minor version.</p>
+  </div>
+
+
+  <!-- step 04 -->
+  <div class="section-hd">
+    <span class="section-num">04</span>
+    <h2 class="section-title">Restart PHP-FPM and Your Web Server</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <p>The new PHP binary is on disk, but your running PHP-FPM process still has the old one loaded in memory. <strong>You must restart it</strong> — the patch does nothing until you do. Replace <code>8.3</code> with whatever version <code>php -v</code> showed you in Step 01.</p>
+
+  <div class="cb">
+    <div class="cb-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span class="cb-filename">bash — Nginx + PHP-FPM stack</span>
+      <button class="cb-copy" data-target="s04a">copy</button>
+    </div>
+    <div class="cb-body">
+<pre id="s04a"><span class="t-comment"># Restart PHP-FPM (loads the new binary into memory)</span>
+sudo systemctl restart php8.3-fpm
+
+<span class="t-comment"># Reload Nginx to reconnect to the updated FPM socket</span>
+sudo systemctl reload nginx</pre>
+    </div>
+  </div>
+
+  <p>If you use <strong>Apache with mod_php</strong> instead of PHP-FPM, restart Apache only — PHP is embedded in the Apache process:</p>
+
+  <div class="cb">
+    <div class="cb-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span class="cb-filename">bash — Apache + mod_php stack</span>
+      <button class="cb-copy" data-target="s04b">copy</button>
+    </div>
+    <div class="cb-body">
+<pre id="s04b"><span class="t-comment"># Restart Apache (mod_php is embedded in Apache)</span>
+sudo systemctl restart apache2</pre>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <span class="callout-icon">→</span>
+    <p class="callout-text"><code>systemctl restart</code> briefly drops all PHP-FPM worker processes, while <code>reload</code> gracefully replaces them. For a production server with active traffic, you can use <code>systemctl reload php8.3-fpm</code> for zero-downtime — workers finish their current request before being replaced. <code>restart</code> is simpler and fine for most servers.</p>
+  </div>
+
+
+  <!-- step 05 -->
+  <div class="section-hd">
+    <span class="section-num">05</span>
+    <h2 class="section-title">Verify the Patch Applied</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <p>Confirm the running version updated and PHP-FPM is healthy:</p>
+
+  <div class="cb">
+    <div class="cb-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span class="cb-filename">bash</span>
+      <button class="cb-copy" data-target="s05">copy</button>
+    </div>
+    <div class="cb-body">
+<pre id="s05"><span class="t-comment"># Check the new version number</span>
+php -v
+
+<span class="t-comment"># Confirm PHP-FPM service is running (replace 8.3 with your version)</span>
+sudo systemctl status php8.3-fpm --no-pager</pre>
+    </div>
+  </div>
+
+  <p>Healthy output looks like this — the version number should be higher than what you saw in Step 01:</p>
+
+  <div class="cb">
+    <div class="cb-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span class="cb-filename">output — php -v after patch</span>
+    </div>
+    <div class="cb-body">
+<pre><span class="t-out">PHP <span class="t-amber">8.3.15</span> (cli) (built: Jan 14 2025 10:22:47) (NTS)
+Copyright (c) The PHP Group
+Zend Engine v4.3.15, Copyright (c) Zend Technologies
+    with Zend OPcache v8.3.15, Copyright (c), by Zend Technologies</span></pre>
+    </div>
+  </div>
+
+  <div class="cb">
+    <div class="cb-bar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span class="cb-filename">output — systemctl status php8.3-fpm</span>
+    </div>
+    <div class="cb-body">
+<pre><span class="t-out">● php8.3-fpm.service - The PHP 8.3 FastCGI Process Manager
+     Loaded: loaded (/lib/systemd/system/php8.3-fpm.service; enabled; ...)
+     Active: <span class="t-green">active (running)</span> since Tue 2026-10-22 08:14:33 UTC; 2min ago
+   Main PID: 23891 (php-fpm8.3)
+     Status: "Processes active: 0, idle: 3, Requests: 4, slow: 0, Traffic: ..."</span></pre>
+    </div>
+  </div>
+
+  <div class="ok-row"><div class="ok-dot"></div><span class="ok-text">PHP version bumped — patch confirmed.</span></div>
+  <div class="ok-row"><div class="ok-dot"></div><span class="ok-text">PHP-FPM status: active (running).</span></div>
+  <div class="ok-row"><div class="ok-dot"></div><span class="ok-text">Nginx reloaded — requests served by patched worker.</span></div>
+
+  <div class="callout info" style="margin-top: 20px;">
+    <span class="callout-icon">ℹ</span>
+    <p class="callout-text">If you're running <strong>Laravel Forge</strong>, PHP updates through Forge's UI restart PHP-FPM automatically. You can also trigger a manual server refresh via the Forge dashboard after running <code>apt update &amp;&amp; apt install --only-upgrade 'php*'</code> via SSH.</p>
+  </div>
+
+</main>
+
+<!-- ── FOOTER ── -->
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p class="site-footer-copy">
+      Built by <a href="https://github.com/CaptainArslan" target="_blank" rel="noopener noreferrer">CaptainArslan</a>.
+      Free to use, copy &amp; adapt.
+    </p>
+    <a href="../index.html" class="site-footer-back">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <line x1="19" y1="12" x2="5" y2="12"/>
+        <polyline points="12 19 5 12 12 5"/>
+      </svg>
+      All Guides
+    </a>
+  </div>
+</footer>
+
+<script>
+/* theme toggle */
+(function () {
+  var root   = document.documentElement;
+  var toggle = document.getElementById('themeToggle');
+  var saved  = null;
+  try { saved = localStorage.getItem('theme'); } catch (e) {}
+  var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  root.setAttribute('data-theme', saved || (prefersLight ? 'light' : 'dark'));
+  toggle.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+  });
+})();
+
+/* copy buttons */
+document.querySelectorAll('.cb-copy[data-target]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var target = document.getElementById(btn.dataset.target);
+    if (!target) return;
+    var text = target.innerText || target.textContent;
+    navigator.clipboard.writeText(text.trim()).then(function () {
+      btn.textContent = 'copied!';
+      btn.classList.add('copied');
+      setTimeout(function () { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1800);
+    }).catch(function () {
+      var range = document.createRange();
+      range.selectNodeContents(target);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+    });
+  });
+});
+
+/* option tabs */
+document.querySelectorAll('.opt-tab').forEach(function (tab) {
+  tab.addEventListener('click', function () {
+    var panelId = tab.dataset.panel;
+    var cb = tab.closest('.cb');
+    cb.querySelectorAll('.opt-tab').forEach(function (t) { t.classList.remove('active'); });
+    cb.querySelectorAll('.opt-panel').forEach(function (p) { p.classList.remove('active'); });
+    tab.classList.add('active');
+    var panel = document.getElementById(panelId);
+    if (panel) panel.classList.add('active');
+    /* update copy button to point to active panel's pre */
+    var copyBtn = cb.querySelector('.cb-copy');
+    if (copyBtn) copyBtn.dataset.target = panelId + '-code';
+  });
+});
+</script>
+</body>
+</html>
